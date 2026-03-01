@@ -5,6 +5,10 @@ A custom Home Assistant integration for the [Meteonomiqs](http://www.wetter.com)
 > **Important:** The Meteonomiqs free tier allows only **50 API calls per key per month**. This integration does **not** poll automatically. You must trigger updates manually via an automation.
 
 ---
+<img width="506" height="662" alt="image" src="https://github.com/user-attachments/assets/5f2bfa8f-0c91-4d6b-a67d-75b1cc812603" />
+
+
+
 
 ## Features
 
