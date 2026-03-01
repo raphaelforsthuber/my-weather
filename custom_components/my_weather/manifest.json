@@ -1,7 +1,7 @@
 {
   "domain": "my_weather",
   "name": "my-weather",
-  "version": "0.1.1",
+  "version": "0.1.2.2",
   "config_flow": true,
   "documentation": "https://github.com/raphaelforsthuber/my-weather#readme",
   "issue_tracker": "https://github.com/raphaelforsthuber/my-weather/issues",
