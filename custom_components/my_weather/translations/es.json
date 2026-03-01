@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Conectar Meteonomiqs",
+        "description": "Introduce al menos una clave API. Se rotarán hasta 4 claves.",
+        "data": {
+          "api_key_1": "Clave API 1 (obligatoria)",
+          "api_key_2": "Clave API 2 (opcional)",
+          "api_key_3": "Clave API 3 (opcional)",
+          "api_key_4": "Clave API 4 (opcional)",
+          "latitude": "Latitud",
+          "longitude": "Longitud",
+          "language": "Idioma"
+        }
+      }
+    },
+    "error": {
+      "required": "Se requiere al menos una clave API.",
+      "invalid_lat": "Latitud no válida (debe estar entre –90 y 90).",
+      "invalid_lon": "Longitud no válida (debe estar entre –180 y 180)."
+    }
+  }
+}

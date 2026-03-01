@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Meteonomiqs verbinden",
+        "description": "Mindestens einen API-Schlüssel eingeben. Bis zu 4 Keys werden im Round-Robin rotiert.",
+        "data": {
+          "api_key_1": "API-Schlüssel 1 (Pflicht)",
+          "api_key_2": "API-Schlüssel 2 (optional)",
+          "api_key_3": "API-Schlüssel 3 (optional)",
+          "api_key_4": "API-Schlüssel 4 (optional)",
+          "latitude": "Breitengrad",
+          "longitude": "Längengrad",
+          "language": "Sprache"
+        }
+      }
+    },
+    "error": {
+      "required": "Mindestens ein API-Schlüssel erforderlich.",
+      "invalid_lat": "Breitengrad ungültig (–90 bis 90).",
+      "invalid_lon": "Längengrad ungültig (–180 bis 180)."
+    }
+  }
+}

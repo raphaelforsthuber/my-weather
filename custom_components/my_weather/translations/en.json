@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Meteonomiqs",
+        "description": "Enter at least one API key. Up to 4 keys will be rotated round-robin.",
+        "data": {
+          "api_key_1": "API Key 1 (required)",
+          "api_key_2": "API Key 2 (optional)",
+          "api_key_3": "API Key 3 (optional)",
+          "api_key_4": "API Key 4 (optional)",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "language": "Language"
+        }
+      }
+    },
+    "error": {
+      "required": "At least one API key is required.",
+      "invalid_lat": "Invalid latitude (must be between –90 and 90).",
+      "invalid_lon": "Invalid longitude (must be between –180 and 180)."
+    }
+  }
+}
