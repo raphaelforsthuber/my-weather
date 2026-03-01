@@ -200,7 +200,7 @@ class MeteonomiqsDataUpdateCoordinator(DataUpdateCoordinator):
             if d: daily_map.setdefault(d, []).append(h)
 
         WEIGHTS = {
-            "clear-night": 0, "sunny": 5, "partlycloudy": 4, 
+            "clear-night": 0, "sunny": 4, "partlycloudy": 5, 
             "rainy": 3, "snowy": 3, "cloudy": 2, "fog": 1, "windy": 1
         }
 
