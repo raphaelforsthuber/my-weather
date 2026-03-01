@@ -29,6 +29,7 @@ _LOGGER = logging.getLogger(__name__)
 @dataclass
 class MeteonomiqsPathSensorDescription(SensorEntityDescription):
     value_path: tuple[str, ...] = ()
+    multiplier: float = 1.0
 
 # Definition der Sensoren für die aktuelle Wetterlage (Stunde 0)
 SENSORS: tuple[MeteonomiqsPathSensorDescription, ...] = (
@@ -51,7 +52,8 @@ SENSORS: tuple[MeteonomiqsPathSensorDescription, ...] = (
         name="Current Cloud Coverage",
         icon="mdi:cloud-percent",
         native_unit_of_measurement=PERCENTAGE,
-        value_path=("clouds", "avg"), 
+        value_path=("clouds", "eights"),
+        multiplier=12.5,
     ),
     MeteonomiqsPathSensorDescription(
         key="wind_speed_current",
@@ -126,6 +128,8 @@ class MeteonomiqsCurrentSensor(CoordinatorEntity, SensorEntity):
         for key in self.entity_description.value_path:
             if not isinstance(value, dict): return None
             value = value.get(key)
+        if isinstance(value, (int, float)):
+            value = round(value * self.entity_description.multiplier)
         return value
 
 
@@ -169,7 +173,7 @@ class MeteonomiqsHourlyForecastSensor(CoordinatorEntity, SensorEntity):
             "hour_local": local_hour,
             "temperature": hd.get("temperature", {}).get("avg"),
             "precipitation": hd.get("prec", {}).get("sum"),
-            "cloud_coverage": (hd.get("clouds", {}).get("eights", 0) * 12.5) if hd.get("clouds", {}).get("eights") is not None else hd.get("clouds", {}).get("avg"),
+            "cloud_coverage": round(hd.get("clouds", {}).get("eights", 0) * 12.5) if hd.get("clouds", {}).get("eights") is not None else hd.get("clouds", {}).get("avg"),
             "wind_speed": wind.get("avg"),
             "wind_gust": wind.get("gusts", {}).get("value"), # Korrekt laut API
         }
