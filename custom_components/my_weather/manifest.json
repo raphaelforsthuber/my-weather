@@ -5,7 +5,7 @@
   "config_flow": true,
   "documentation": "https://github.com/raphaelforsthuber/my-weather#readme",
   "issue_tracker": "https://github.com/raphaelforsthuber/my-weather/issues",
-  "codeowners": ["@raphaelforsthhuber"],
+  "codeowners": ["@raphaelforsthuber"],
   "iot_class": "cloud_polling",
   "loggers": ["my_weather"]
 }
