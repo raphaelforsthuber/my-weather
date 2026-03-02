@@ -56,7 +56,7 @@ async def async_setup_entry(
 
 class MeteonomiqsWeather(CoordinatorEntity, WeatherEntity):
     _attr_has_entity_name = True
-    _attr_name = "Meteonomiqs Wetter"
+    _attr_name = "Meteonomiqs Weather"
     _attr_supported_features = (
         WeatherEntityFeature.FORECAST_DAILY |
         WeatherEntityFeature.FORECAST_HOURLY
