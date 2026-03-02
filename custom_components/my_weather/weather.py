@@ -168,7 +168,7 @@ class MeteonomiqsWeather(CoordinatorEntity, WeatherEntity):
         
         return {
             "last_api_update": last_update.isoformat() if last_update else None,
-            "attribution": "Data provided by my_weather.com",
+            "attribution": "Data provided by meteonomiqs.com",
             "wind_gust": self.native_wind_gust_speed,
             "cloud_coverage": int(round(cloud_val, 0)),
         }
