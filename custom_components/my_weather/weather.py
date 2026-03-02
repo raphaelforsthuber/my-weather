@@ -63,6 +63,7 @@ class MeteonomiqsWeather(CoordinatorEntity, WeatherEntity):
     )
     _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_native_wind_speed_unit = UnitOfSpeed.KILOMETERS_PER_HOUR
+    _attr_native_wind_gust_speed_unit = UnitOfSpeed.KILOMETERS_PER_HOUR
     _attr_native_precipitation_unit = UnitOfPrecipitationDepth.MILLIMETERS
     _attr_native_pressure_unit = UnitOfPressure.HPA
 
@@ -110,6 +111,12 @@ class MeteonomiqsWeather(CoordinatorEntity, WeatherEntity):
     def wind_bearing(self) -> float | None:
         return self._cur.get("wind", {}).get("degree")
 
+    @property
+    def cloud_coverage(self) -> float | None:
+        c = self._cur.get("clouds") or {}
+        eights = c.get("eights")
+        return round(eights * 12.5) if eights is not None else None
+
     # ------------------ DAILY ------------------
     async def async_forecast_daily(self) -> list[Forecast] | None:
         data = self.coordinator.data or {}
@@ -156,19 +163,15 @@ class MeteonomiqsWeather(CoordinatorEntity, WeatherEntity):
                 "native_wind_speed": wind_group.get("avg"),
                 "native_wind_gust_speed": wind_group.get("gusts", {}).get("value"),
                 "wind_bearing": wind_group.get("degree"),
-                "cloud_coverage": cloud_eights * 12.5 if cloud_eights is not None else None,
+                "cloud_coverage": round(cloud_eights * 12.5) if cloud_eights is not None else None,
             })
         return result
 
     @property
     def extra_state_attributes(self):
         last_update = getattr(self.coordinator, "last_successful_update", None)
-        c = self._cur.get("clouds") or {}
-        cloud_val = c.get("avg") or (c.get("eights") * 12.5 if c.get("eights") is not None else 0)
         
         return {
             "last_api_update": last_update.isoformat() if last_update else None,
             "attribution": "Data provided by meteonomiqs.com",
-            "wind_gust": self.native_wind_gust_speed,
-            "cloud_coverage": int(round(cloud_val, 0)),
         }
