@@ -1,11 +1,12 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import logging
-from typing import Any
 
 from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
+    SensorDeviceClass,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -13,11 +14,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.const import (
     UnitOfTemperature,
+    UnitOfTime,
+    UnitOfPrecipitationDepth,
     PERCENTAGE,
-    UnitOfPressure,
     UnitOfSpeed,
     EntityCategory,
-    STATE_UNKNOWN,
 )
 from homeassistant.util import dt as dt_util
 
@@ -31,13 +32,14 @@ class MeteonomiqsPathSensorDescription(SensorEntityDescription):
     value_path: tuple[str, ...] = ()
     multiplier: float = 1.0
 
-# Definition der Sensoren für die aktuelle Wetterlage (Stunde 0)
 SENSORS: tuple[MeteonomiqsPathSensorDescription, ...] = (
     MeteonomiqsPathSensorDescription(
         key="temperature_current",
         name="Current Temperature",
         icon="mdi:thermometer",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
         value_path=("temperature", "avg"),
     ),
     MeteonomiqsPathSensorDescription(
@@ -45,6 +47,8 @@ SENSORS: tuple[MeteonomiqsPathSensorDescription, ...] = (
         name="Current Humidity",
         icon="mdi:water-percent",
         native_unit_of_measurement=PERCENTAGE,
+        device_class=SensorDeviceClass.HUMIDITY,
+        state_class=SensorStateClass.MEASUREMENT,
         value_path=("relativeHumidity",),
     ),
     MeteonomiqsPathSensorDescription(
@@ -52,6 +56,7 @@ SENSORS: tuple[MeteonomiqsPathSensorDescription, ...] = (
         name="Current Cloud Coverage",
         icon="mdi:cloud-percent",
         native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
         value_path=("clouds", "eights"),
         multiplier=12.5,
     ),
@@ -60,6 +65,8 @@ SENSORS: tuple[MeteonomiqsPathSensorDescription, ...] = (
         name="Current Wind Speed",
         icon="mdi:weather-windy",
         native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
+        device_class=SensorDeviceClass.WIND_SPEED,
+        state_class=SensorStateClass.MEASUREMENT,
         value_path=("wind", "avg"),
     ),
     MeteonomiqsPathSensorDescription(
@@ -67,13 +74,17 @@ SENSORS: tuple[MeteonomiqsPathSensorDescription, ...] = (
         name="Current Wind Gusts",
         icon="mdi:weather-windy-variant",
         native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
-        value_path=("wind", "gusts", "value"), # Korrigierter Pfad laut API-Check
+        device_class=SensorDeviceClass.WIND_SPEED,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_path=("wind", "gusts", "value"),
     ),
     MeteonomiqsPathSensorDescription(
         key="prec_sum_current",
         name="Current Precipitation",
         icon="mdi:weather-rainy",
-        native_unit_of_measurement="mm",
+        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
+        device_class=SensorDeviceClass.PRECIPITATION,
+        state_class=SensorStateClass.MEASUREMENT,
         value_path=("prec", "sum"),
     ),
 )
@@ -126,7 +137,8 @@ class MeteonomiqsCurrentSensor(CoordinatorEntity, SensorEntity):
 
         value = hourly[idx]
         for key in self.entity_description.value_path:
-            if not isinstance(value, dict): return None
+            if not isinstance(value, dict):
+                return None
             value = value.get(key)
         if isinstance(value, (int, float)):
             value = round(value * self.entity_description.multiplier)
@@ -151,16 +163,17 @@ class MeteonomiqsHourlyForecastSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         hd = self._hour_data
-        if not hd: return None
+        if not hd:
+            return None
         w = hd.get("weather") or {}
         return map_condition_from_state(w.get("state"), hd.get("isNight"))
 
     @property
     def extra_state_attributes(self):
         hd = self._hour_data
-        if not hd: return {}
+        if not hd:
+            return {}
 
-        # Zeitstempel lokal formatieren
         dt_str = hd.get("from")
         local_hour = ""
         if dt_str:
@@ -169,13 +182,14 @@ class MeteonomiqsHourlyForecastSensor(CoordinatorEntity, SensorEntity):
                 local_hour = dt_util.as_local(dt).strftime("%H:00")
 
         wind = hd.get("wind", {})
+        cloud_eights = hd.get("clouds", {}).get("eights")
         return {
             "hour_local": local_hour,
             "temperature": hd.get("temperature", {}).get("avg"),
             "precipitation": hd.get("prec", {}).get("sum"),
-            "cloud_coverage": round(hd.get("clouds", {}).get("eights", 0) * 12.5) if hd.get("clouds", {}).get("eights") is not None else hd.get("clouds", {}).get("avg"),
+            "cloud_coverage": round(cloud_eights * 12.5) if cloud_eights is not None else None,
             "wind_speed": wind.get("avg"),
-            "wind_gust": wind.get("gusts", {}).get("value"), # Korrekt laut API
+            "wind_gust": wind.get("gusts", {}).get("value"),
         }
 
 
@@ -195,7 +209,8 @@ class MeteonomiqsDailyForecastSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         dd = self._day_data
-        if not dd: return None
+        if not dd:
+            return None
         return dd.get("weather", {}).get("state")
 
     @property
@@ -203,7 +218,7 @@ class MeteonomiqsDailyForecastSensor(CoordinatorEntity, SensorEntity):
         hd = self._day_data
         if hd is None:
             return {}
-        
+
         wind = hd.get("wind", {})
         return {
             "date": hd.get("date"),
@@ -213,55 +228,69 @@ class MeteonomiqsDailyForecastSensor(CoordinatorEntity, SensorEntity):
             "cloud_coverage": hd.get("clouds", {}).get("avg"),
             "wind_speed": wind.get("avg"),
             "wind_gust_max": wind.get("gusts", {}).get("value"),
-            "wind_warning": wind.get("significantWind"), # Sturm-Indikator
+            "wind_warning": wind.get("significantWind"),
         }
 
-# --- Diagnose Sensoren bleiben unverändert ---
+
 class MeteonomiqsLastApiUpdateSensor(CoordinatorEntity, SensorEntity):
     _attr_name = "Meteonomiqs Last API Update"
     _attr_unique_id = "my_weather_last_api_update"
-    _attr_device_class = "timestamp"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+
     @property
     def native_value(self):
         ts = self.coordinator.last_successful_update
-        return ts.replace(tzinfo=dt_util.UTC) if ts else None
+        return dt_util.as_utc(ts) if ts else None
+
 
 class MeteonomiqsDataAgeSensor(CoordinatorEntity, SensorEntity):
     _attr_name = "Meteonomiqs Data Age"
     _attr_unique_id = "my_weather_data_age"
-    _attr_unit_of_measurement = "min"
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+
     @property
     def native_value(self):
         ts = self.coordinator.last_successful_update
-        if not ts: return None
+        if not ts:
+            return None
         return round((dt_util.utcnow() - ts).total_seconds() / 60)
+
 
 class MeteonomiqsMonthlyCallCounter(CoordinatorEntity, SensorEntity):
     _attr_name = "Meteonomiqs Monthly API Calls"
     _attr_unique_id = "my_weather_api_calls_month"
-    _attr_unit_of_measurement = "calls"
+    _attr_native_unit_of_measurement = "calls"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+
     @property
     def native_value(self):
         return getattr(self.coordinator, "monthly_call_counter", 0)
+
 
 class MeteonomiqsApiLimitWarning(CoordinatorEntity, SensorEntity):
     _attr_name = "Meteonomiqs API Status"
     _attr_unique_id = "my_weather_api_limit_status"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+
     @property
     def native_value(self):
         used = getattr(self.coordinator, "monthly_call_counter", 0)
         return "Limit reached" if used >= 100 else "Warning" if used >= 80 else "OK"
 
+
 class MeteonomiqsActiveApiKeyIndexSensor(CoordinatorEntity, SensorEntity):
     _attr_name = "Meteonomiqs Active API Key"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+
     def __init__(self, coordinator, entry: ConfigEntry):
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_active_api_key_index"
+
     @property
     def native_value(self):
         return int(getattr(self.coordinator, "current_key_index", 0)) + 1
